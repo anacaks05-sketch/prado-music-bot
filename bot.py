@@ -3,9 +3,24 @@ import tempfile
 import telebot
 import yt_dlp
 import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
 TOKEN = '8789963414:AAHSpfy-_wxi0hzsNtTY7WSKk_Dm7EeNgvM'
 bot = telebot.TeleBot(TOKEN)
+
+# Servidor HTTP falso só pra satisfazer o Render
+class PingHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'Prado Music Bot online!')
+    def log_message(self, *args):
+        pass
+
+def run_server():
+    port = int(os.environ.get('PORT', 10000))
+    server = HTTPServer(('0.0.0.0', port), PingHandler)
+    server.serve_forever()
 
 def download_music(query, tmpdir):
     sources = [
@@ -45,8 +60,7 @@ def send_welcome(message):
         "Manda uma lista de músicas (uma por linha) e eu baixo os MP3s!\n\n"
         "Exemplo:\n"
         "Thiaguinho - Esquema Preferido\n"
-        "Sorriso Maroto - Por Você\n"
-        "Belo - Intriga da Oposição",
+        "Sorriso Maroto - Por Você",
         parse_mode='Markdown'
     )
 
@@ -67,7 +81,6 @@ def handle_message(message):
             try:
                 path = download_music(music, tmpdir)
                 if path:
-                    # Renomeia para .mp3 se necessário
                     if not path.endswith('.mp3'):
                         newpath = path.rsplit('.', 1)[0] + '.mp3'
                         os.rename(path, newpath)
@@ -81,6 +94,9 @@ def handle_message(message):
                 bot.edit_message_text(f"❌ Erro: *{music}*", message.chat.id, msg.message_id, parse_mode='Markdown')
 
     threading.Thread(target=process).start()
+
+# Inicia servidor HTTP em thread separada
+threading.Thread(target=run_server, daemon=True).start()
 
 print("Bot iniciado!")
 bot.infinity_polling()

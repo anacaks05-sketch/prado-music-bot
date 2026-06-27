@@ -1,2 +1,4 @@
 python-telegram-bot==20.7
 yt-dlp==2024.8.6
+httpx==0.25.2
+anyio==3.7.1
